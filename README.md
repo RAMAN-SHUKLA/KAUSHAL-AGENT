@@ -94,6 +94,6 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## Contact
 
-Your Name - your.email@example.com
+ramanshukla2005@gmail.com
 
-Project Link: [https://github.com/YOUR_USERNAME/hiring-agent](https://github.com/YOUR_USERNAME/hiring-agent)
+Project Link: https://github.com/RAMAN-SHUKLA/KAUSHAL-AGENT
