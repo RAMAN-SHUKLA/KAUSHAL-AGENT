@@ -1,11 +1,10 @@
 import { createClient } from '@supabase/supabase-js';
 
-// Supabase configuration
 const supabaseUrl = import.meta.env.VITE_SUPABASE_URL;
 const supabaseAnonKey = import.meta.env.VITE_SUPABASE_ANON_KEY;
 
 if (!supabaseUrl || !supabaseAnonKey) {
-  throw new Error('Supabase URL and Anon Key are required. Please check your .env file');
+  throw new Error('Missing Supabase environment variables');
 }
 
 // Create and export the Supabase client with optimized configuration
@@ -91,3 +90,149 @@ supabase.auth.onAuthStateChange((event, session) => {
 supabase.auth.getSession().then(({ data: { session } }) => {
   console.log('Initial session check:', session);
 });
+
+// Jobs
+export const jobsService = {
+  async getJobs() {
+    const { data, error } = await supabase
+      .from('jobs')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  async createJob(jobData) {
+    const { data, error } = await supabase
+      .from('jobs')
+      .insert([jobData])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateJob(jobId, jobData) {
+    const { data, error } = await supabase
+      .from('jobs')
+      .update(jobData)
+      .eq('id', jobId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async deleteJob(jobId) {
+    const { error } = await supabase
+      .from('jobs')
+      .delete()
+      .eq('id', jobId);
+    if (error) throw error;
+  }
+};
+
+// Applications
+export const applicationsService = {
+  async getApplications(userId = null) {
+    let query = supabase
+      .from('job_applications')
+      .select(`
+        *,
+        jobs (
+          title,
+          company,
+          location
+        )
+      `);
+    
+    if (userId) {
+      query = query.eq('applicant_id', userId);
+    }
+    
+    const { data, error } = await query.order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  async createApplication(applicationData) {
+    const { data, error } = await supabase
+      .from('job_applications')
+      .insert([applicationData])
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async updateApplicationStatus(applicationId, status) {
+    const { data, error } = await supabase
+      .from('job_applications')
+      .update({ status })
+      .eq('id', applicationId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  }
+};
+
+// Users
+export const usersService = {
+  async getUsers() {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .order('created_at', { ascending: false });
+    if (error) throw error;
+    return data;
+  },
+
+  async updateUser(userId, userData) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .update(userData)
+      .eq('id', userId)
+      .select()
+      .single();
+    if (error) throw error;
+    return data;
+  },
+
+  async getUserProfile(userId) {
+    const { data, error } = await supabase
+      .from('profiles')
+      .select('*')
+      .eq('id', userId)
+      .single();
+    if (error) throw error;
+    return data;
+  }
+};
+
+// Analytics
+export const analyticsService = {
+  async getDashboardStats() {
+    const { data: users, error: usersError } = await supabase
+      .from('profiles')
+      .select('count', { count: 'exact' });
+    
+    const { data: jobs, error: jobsError } = await supabase
+      .from('jobs')
+      .select('count', { count: 'exact' });
+    
+    const { data: applications, error: applicationsError } = await supabase
+      .from('job_applications')
+      .select('count', { count: 'exact' });
+
+    if (usersError || jobsError || applicationsError) {
+      throw new Error('Failed to fetch dashboard stats');
+    }
+
+    return {
+      totalUsers: users[0]?.count || 0,
+      totalJobs: jobs[0]?.count || 0,
+      totalApplications: applications[0]?.count || 0
+    };
+  }
+};

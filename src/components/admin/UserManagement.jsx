@@ -1,198 +1,186 @@
 import React, { useState, useEffect } from 'react';
-import { 
-  User as UserIcon, 
-  Search, 
-  Trash2 as Delete, 
-  Edit2 as Edit 
-} from 'lucide-react';
-import { supabase } from '../../services/supabase';
+import { Search, UserPlus, UserX, Mail, Phone } from 'lucide-react';
+import { usersService } from '../../services/supabase';
+import { toast } from 'react-toastify';
 
 const UserManagement = () => {
   const [users, setUsers] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
   const [searchTerm, setSearchTerm] = useState('');
-  const [loading, setLoading] = useState(true);
-  const [error, setError] = useState('');
+  const [selectedRole, setSelectedRole] = useState('All');
 
   useEffect(() => {
-    const fetchUsers = async () => {
-      try {
-        setLoading(true);
-        const { data, error } = await supabase
-          .from('profiles')
-          .select('*')
-          .order('created_at', { ascending: false });
-
-        if (error) throw error;
-        setUsers(data);
-      } catch (err) {
-        setError(err.message);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    // Initial fetch
     fetchUsers();
-
-    // Set up real-time subscription
-    const subscription = supabase
-      .from('profiles')
-      .on('*', () => fetchUsers())
-      .subscribe();
-
-    return () => {
-      subscription.unsubscribe();
-    };
   }, []);
 
-  const deleteUser = async (userId) => {
-    if (!window.confirm('Are you sure you want to delete this user?')) return;
-
+  const fetchUsers = async () => {
     try {
-      const { error: authError } = await supabase.auth.admin.deleteUser(userId);
-      if (authError) throw authError;
-
-      const { error: profileError } = await supabase
-        .from('profiles')
-        .delete()
-        .eq('id', userId);
-
-      if (profileError) throw profileError;
-
-      // Fetch updated list
-      await fetchUsers();
-    } catch (err) {
-      setError(err.message);
+      setIsLoading(true);
+      const data = await usersService.getUsers();
+      setUsers(data);
+    } catch (error) {
+      console.error('Error fetching users:', error);
+      toast.error('Failed to load users');
+    } finally {
+      setIsLoading(false);
     }
   };
 
-  const updateUserRole = async (userId, newRole) => {
+  const handleStatusChange = async (userId, newStatus) => {
     try {
-      const { error } = await supabase
-        .from('profiles')
-        .update({ role: newRole })
-        .eq('id', userId);
-
-      if (error) throw error;
-
-      // Fetch updated list
-      await fetchUsers();
-    } catch (err) {
-      setError(err.message);
+      await usersService.updateUser(userId, { status: newStatus });
+      setUsers(users.map(user =>
+        user.id === userId ? { ...user, status: newStatus } : user
+      ));
+      toast.success('User status updated successfully');
+    } catch (error) {
+      console.error('Error updating user status:', error);
+      toast.error('Failed to update user status');
     }
   };
 
-  const filteredUsers = users.filter(user => 
-    user.full_name.toLowerCase().includes(searchTerm.toLowerCase())
-  );
+  const filteredUsers = users.filter(user => {
+    const matchesSearch = user.full_name?.toLowerCase().includes(searchTerm.toLowerCase()) ||
+      user.email?.toLowerCase().includes(searchTerm.toLowerCase());
+    const matchesRole = selectedRole === 'All' || user.role === selectedRole;
+    return matchesSearch && matchesRole;
+  });
+
+  if (isLoading) {
+    return (
+      <div className="p-6">
+        <div className="flex justify-center items-center h-64">
+          <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-yellow-600"></div>
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-2xl font-bold flex items-center gap-2">
-          <UserIcon className="w-6 h-6" />
-          User Management
-        </h2>
-        <div className="flex items-center gap-2">
-          <input
-            type="text"
-            placeholder="Search users..."
-            value={searchTerm}
-            onChange={(e) => setSearchTerm(e.target.value)}
-            className="bg-gray-700 border-gray-600 rounded-lg p-2 text-white focus:ring-accent-yellow focus:border-accent-yellow"
-          />
-          <Search className="w-5 h-5 text-gray-400" />
-        </div>
+      <div className="flex justify-between items-center mb-6">
+        <h1 className="text-2xl font-bold text-gray-900 dark:text-white">User Management</h1>
+        <button
+          className="flex items-center px-4 py-2 bg-yellow-600 text-white rounded-lg hover:bg-yellow-700 transition-colors"
+        >
+          <UserPlus className="h-5 w-5 mr-2" />
+          Add New User
+        </button>
       </div>
 
-      {error && (
-        <div className="bg-red-600 text-white p-4 rounded-lg mb-4">
-          {error}
+      {/* Filters */}
+      <div className="flex flex-col md:flex-row gap-4 mb-6">
+        <div className="flex-1">
+          <div className="relative">
+            <Search className="absolute left-3 top-1/2 transform -translate-y-1/2 h-5 w-5 text-gray-400" />
+            <input
+              type="text"
+              placeholder="Search users..."
+              value={searchTerm}
+              onChange={(e) => setSearchTerm(e.target.value)}
+              className="w-full pl-10 pr-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+            />
+          </div>
         </div>
-      )}
+        <select
+          value={selectedRole}
+          onChange={(e) => setSelectedRole(e.target.value)}
+          className="px-4 py-2 border border-gray-300 dark:border-gray-600 rounded-lg focus:ring-2 focus:ring-yellow-500 focus:border-transparent bg-white dark:bg-gray-800 text-gray-900 dark:text-white"
+        >
+          <option value="All">All Roles</option>
+          <option value="candidate">Candidates</option>
+          <option value="employer">Employers</option>
+          <option value="admin">Admins</option>
+        </select>
+      </div>
 
-      {loading ? (
-        <div className="text-center py-8 text-gray-400">Loading users...</div>
-      ) : (
-        <div className="overflow-x-auto">
-          <table className="w-full">
-            <thead>
-              <tr className="bg-gray-700">
-                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Name
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Email
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Role
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Joined
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Status
-                </th>
-                <th className="px-6 py-3 text-left text-xs font-medium text-white uppercase tracking-wider">
-                  Actions
-                </th>
+      {/* Users Table */}
+      <div className="bg-white dark:bg-gray-800 rounded-lg shadow overflow-hidden">
+        <table className="min-w-full divide-y divide-gray-200 dark:divide-gray-700">
+          <thead className="bg-gray-50 dark:bg-gray-900">
+            <tr>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">User</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Contact</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Role</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Join Date</th>
+              <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Status</th>
+              <th className="px-6 py-3 text-right text-xs font-medium text-gray-500 dark:text-gray-400 uppercase tracking-wider">Actions</th>
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-200 dark:divide-gray-700">
+            {filteredUsers.length === 0 ? (
+              <tr>
+                <td colSpan="6" className="px-6 py-4 text-center text-gray-500 dark:text-gray-400">
+                  No users found
+                </td>
               </tr>
-            </thead>
-            <tbody className="bg-gray-800">
-              {filteredUsers.map((user) => (
-                <tr key={user.id} className="border-b border-gray-700">
+            ) : (
+              filteredUsers.map((user) => (
+                <tr key={user.id}>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user.full_name}
+                    <div className="flex items-center">
+                      <div className="h-10 w-10 flex-shrink-0">
+                        <div className="h-10 w-10 rounded-full bg-yellow-100 dark:bg-yellow-900 flex items-center justify-center">
+                          <span className="text-yellow-600 font-medium text-lg">
+                            {user.full_name?.charAt(0) || user.email?.charAt(0)}
+                          </span>
+                        </div>
+                      </div>
+                      <div className="ml-4">
+                        <div className="text-sm font-medium text-gray-900 dark:text-white">{user.full_name}</div>
+                      </div>
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user.email}
+                    <div className="flex flex-col space-y-1">
+                      <div className="flex items-center text-sm text-gray-900 dark:text-white">
+                        <Mail className="h-4 w-4 mr-2 text-gray-400" />
+                        {user.email}
+                      </div>
+                      {user.phone && (
+                        <div className="flex items-center text-sm text-gray-900 dark:text-white">
+                          <Phone className="h-4 w-4 mr-2 text-gray-400" />
+                          {user.phone}
+                        </div>
+                      )}
+                    </div>
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    <select
-                      value={user.role}
-                      onChange={(e) => updateUserRole(user.id, e.target.value)}
-                      className="bg-gray-700 border-gray-600 rounded-lg p-2 text-white focus:ring-accent-yellow focus:border-accent-yellow"
-                    >
-                      <option value="candidate">Candidate</option>
-                      <option value="employer">Employer</option>
-                      <option value="admin">Admin</option>
-                    </select>
+                    <span className="px-2 py-1 text-xs font-medium rounded-full bg-yellow-100 text-yellow-800">
+                      {user.role}
+                    </span>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900 dark:text-white">
                     {new Date(user.created_at).toLocaleDateString()}
                   </td>
                   <td className="px-6 py-4 whitespace-nowrap">
-                    {user.is_active ? (
-                      <span className="px-2 py-1 rounded-full bg-green-500/20 text-green-500 text-xs">
-                        Active
-                      </span>
-                    ) : (
-                      <span className="px-2 py-1 rounded-full bg-red-500/20 text-red-500 text-xs">
-                        Inactive
-                      </span>
-                    )}
+                    <select
+                      value={user.status || 'Active'}
+                      onChange={(e) => handleStatusChange(user.id, e.target.value)}
+                      className={`text-sm rounded-full px-2 py-1 ${
+                        user.status === 'Active'
+                          ? 'bg-green-100 text-green-800'
+                          : 'bg-red-100 text-red-800'
+                      }`}
+                    >
+                      <option value="Active">Active</option>
+                      <option value="Inactive">Inactive</option>
+                    </select>
                   </td>
-                  <td className="px-6 py-4 whitespace-nowrap">
-                    <div className="flex items-center gap-2">
-                      <button
-                        className="text-accent-yellow hover:text-accent-yellow-dark"
-                        onClick={() => deleteUser(user.id)}
-                      >
-                        <Delete className="w-5 h-5" />
-                      </button>
-                      <button
-                        className="text-accent-yellow hover:text-accent-yellow-dark"
-                      >
-                        <Edit className="w-5 h-5" />
-                      </button>
-                    </div>
+                  <td className="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                    <button
+                      onClick={() => handleStatusChange(user.id, user.status === 'Active' ? 'Inactive' : 'Active')}
+                      className={`text-${user.status === 'Active' ? 'red' : 'green'}-600 hover:text-${user.status === 'Active' ? 'red' : 'green'}-900`}
+                    >
+                      <UserX className="h-5 w-5" />
+                    </button>
                   </td>
                 </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
-      )}
+              ))
+            )}
+          </tbody>
+        </table>
+      </div>
     </div>
   );
 };

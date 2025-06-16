@@ -15,6 +15,7 @@ import {
   Shield,
   Mail,
 } from 'lucide-react';
+import Footer from '../components/layout/Footer';
 
 // Custom SVG Icons for Agents
 const VedantIcon = () => (
@@ -133,28 +134,29 @@ const LandingPage = () => {
   ];
 
   return (
-    <div className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white min-h-screen">
+    <div className="bg-gray-100 dark:bg-gray-800 text-gray-900 dark:text-white min-h-screen flex flex-col">
       {/* Navigation Bar */}
       <nav className="fixed top-0 left-0 right-0 bg-white dark:bg-gray-900 shadow-sm z-50">
-        <div className="max-w-16xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           <div className="flex justify-between h-16">
             <div className="flex items-center">
-              <span className="text-2xl font-bold text-yellow-600">KAUSHAL</span>
+              <Link to="/" className="text-2xl font-bold text-yellow-600">KAUSHAL</Link>
             </div>
-            <div className="hidden md:flex items-center space-x-8">
-              <Link to="/" className="text-gray-700 dark:text-gray-200 hover:text-yellow-600 dark:hover:text-yellow-500 px-3 py-2 text-sm font-medium">Home</Link>
+            <div className="hidden md:flex items-center space-x-4">
               <Link to="/about" className="text-gray-700 dark:text-gray-200 hover:text-yellow-600 dark:hover:text-yellow-500 px-3 py-2 text-sm font-medium">About</Link>
               <Link to="/services" className="text-gray-700 dark:text-gray-200 hover:text-yellow-600 dark:hover:text-yellow-500 px-3 py-2 text-sm font-medium">Services</Link>
               <Link to="/contact" className="text-gray-700 dark:text-gray-200 hover:text-yellow-600 dark:hover:text-yellow-500 px-3 py-2 text-sm font-medium">Contact</Link>
+              <Link to="/candidate/dashboard" className="bg-yellow-600 text-white hover:bg-yellow-700 px-4 py-2 rounded-md text-sm font-medium">Candidate Portal</Link>
+              <Link to="/admin/dashboard" className="bg-gray-800 text-white hover:bg-gray-700 px-4 py-2 rounded-md text-sm font-medium">Admin Portal</Link>
             </div>
           </div>
         </div>
         {/* Yellow bar below navigation */}
-        <div className="h-2 bg-yellow-500 w-full"></div>
+        <div className="h-1 bg-yellow-500 w-full"></div>
       </nav>
 
-      {/* Add padding to account for fixed header */}
-      <div className="pt-0">
+      {/* Main Content */}
+      <div className="flex-1 pt-16 overflow-visible">
       {/* Hero Section */}
       <main className="relative overflow-hidden">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-20 md:py-28 text-center">
@@ -195,12 +197,19 @@ const LandingPage = () => {
             </div>
           </div>
 
-          <div className="mt-10">
+          <div className="mt-10 flex justify-center gap-4">
             <Link
-              to="/signup"
+              to="/candidate/dashboard"
               className="inline-flex items-center px-8 py-3 border border-transparent text-base font-medium rounded-md text-white bg-yellow-600 hover:bg-yellow-700 md:py-4 md:text-lg md:px-10"
             >
-              Get Started Now
+              Access Candidate Portal
+              <ArrowRight className="ml-2 -mr-1 h-5 w-5" />
+            </Link>
+            <Link
+              to="/admin/dashboard"
+              className="inline-flex items-center px-8 py-3 border border-gray-800 text-base font-medium rounded-md text-white bg-gray-800 hover:bg-gray-700 md:py-4 md:text-lg md:px-10"
+            >
+              Access Admin Portal
               <ArrowRight className="ml-2 -mr-1 h-5 w-5" />
             </Link>
           </div>
@@ -340,7 +349,7 @@ const LandingPage = () => {
                 <div className="mb-6">
                     <img 
                       className="h-48 w-48 rounded-full object-cover shadow-lg border-4 border-yellow-400" 
-                      src="founder.jpg" 
+                      src="/founder.jpg" 
                       alt="RAMAN SHUKLA - Founder" 
                     />
                 </div>
@@ -377,6 +386,8 @@ const LandingPage = () => {
         </div>
       </section>
       </div>
+
+      <Footer />
     </div>
   );
 };

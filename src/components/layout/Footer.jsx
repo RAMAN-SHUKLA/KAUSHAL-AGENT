@@ -32,6 +32,7 @@ const Footer = () => {
   ];
 
   const quickLinks = [
+    { name: 'Home', href: '/' },
     { name: 'About Us', href: '/about' },
     { name: 'Services', href: '/services' },
     { name: 'Contact', href: '/contact' },
@@ -46,7 +47,7 @@ const Footer = () => {
           {/* Company Info */}
           <div className="col-span-1">
             <h3 className="text-lg font-bold text-gray-900 dark:text-white mb-4">
-              Hiring Agent
+              KAUSHAL
             </h3>
             <p className="text-gray-600 dark:text-gray-300 mb-4">
               Connecting talented professionals with great opportunities.
@@ -131,7 +132,7 @@ const Footer = () => {
 
         <div className="mt-8 pt-8 border-t border-gray-200 dark:border-gray-700">
           <p className="text-center text-gray-400 dark:text-gray-500">
-            © {new Date().getFullYear()} Hiring Agent. All rights reserved.
+            © {new Date().getFullYear()} KAUSHAL. All rights reserved.
           </p>
         </div>
       </div>

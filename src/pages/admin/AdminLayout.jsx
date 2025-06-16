@@ -10,6 +10,7 @@ import {
   LogOut 
 } from 'lucide-react';
 import { useAuth } from '../../contexts/AuthContext';
+import Footer from '../../components/layout/Footer';
 
 const AdminLayout = () => {
   const { signOut } = useAuth();
@@ -71,11 +72,14 @@ const AdminLayout = () => {
         </div>
       </aside>
 
-      <main className="flex-1 overflow-auto">
-        <div className="container mx-auto px-6 py-8">
-          <Outlet />
-        </div>
-      </main>
+      <div className="flex-1 flex flex-col">
+        <main className="flex-1 overflow-auto">
+          <div className="container mx-auto px-6 py-8">
+            <Outlet />
+          </div>
+        </main>
+        <Footer />
+      </div>
     </div>
   );
 };
